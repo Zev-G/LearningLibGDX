@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 public class Ball extends Shape {
 
-    private int radii = 50;
+    private float radii = 50;
 
     public Ball(ShapeRenderer shape) {
         super(shape);
@@ -15,15 +15,27 @@ public class Ball extends Shape {
     @Override
     public void render() {
         shape.begin(ShapeRenderer.ShapeType.Filled);
+        Vector relativePos = getRelativePos();
+
         float width = Gdx.graphics.getWidth() / 2f;
         float height = Gdx.graphics.getHeight() / 2f;
         float x = pos.getX();
         float y = pos.getY();
         double maxDist = Math.sqrt(width * width + height * height);
         float dist = 1f - (float) (Math.sqrt(x * x + y * y) / maxDist);
-        Vector pos = getRelativePos();
-        shape.setColor(hsvToRgb(dist, dist, 1));
-        shape.circle(pos.getX(), pos.getY(), radii);
+
+        float mouseDist = 1;
+        if (Application.SPOTLIGHT) {
+            float xMouse = Gdx.input.getX();
+            float yMouse = height * 2 - Gdx.input.getY();
+            float xMouseDist = Math.abs(xMouse - relativePos.getX());
+            float yMouseDist = Math.abs(yMouse - relativePos.getY());
+            mouseDist = 1f - (float) (Math.sqrt(xMouseDist * xMouseDist + yMouseDist * yMouseDist) / maxDist);
+            radii = Math.max((mouseDist * 2.5f), 1f);
+        }
+
+        shape.setColor(hsvToRgb(dist, dist, (float) Math.max(mouseDist, 0.2)));
+        shape.circle(relativePos.getX(), relativePos.getY(), radii);
         shape.end();
     }
 
@@ -46,11 +58,11 @@ public class Ball extends Shape {
         }
     }
 
-    public int getRadii() {
+    public float getRadii() {
         return radii;
     }
 
-    public void setRadii(int radii) {
+    public void setRadii(float radii) {
         this.radii = radii;
     }
 

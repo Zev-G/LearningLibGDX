@@ -14,6 +14,8 @@ import java.util.function.Supplier;
 
 public class Application extends ApplicationAdapter {
 
+	public static final boolean SPOTLIGHT = false;
+
 	ShapeRenderer shape;
 
 	List<Body> bodies = new ArrayList<>();
@@ -28,7 +30,9 @@ public class Application extends ApplicationAdapter {
 		for (int balls = 0; balls < 6000; balls++) {
 			Ball ball = new Ball(shape);
 			ball.setRelativeTo(relativeTo);
-			ball.setRadii((int) (Math.abs(randomNumber()) * 5));
+			if (!SPOTLIGHT) {
+				ball.setRadii((int) (Math.abs(randomNumber()) * 5));
+			}
 //			ball.setMaxVelocity(new Vector(maxVel));
 //			ball.setMinVelocity(new Vector(-maxVel));
 			ball.setAcceleration(new Vector(randomNumber() / 20, randomNumber() / 20));
