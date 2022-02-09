@@ -1,8 +1,7 @@
-package com.me.tmw;
+package com.me.tmw.balls;
 
 import com.badlogic.gdx.Gdx;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 public abstract class Body {

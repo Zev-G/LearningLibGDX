@@ -1,4 +1,4 @@
-package com.me.tmw;
+package com.me.tmw.balls;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;

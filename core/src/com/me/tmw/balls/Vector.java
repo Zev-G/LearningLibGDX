@@ -1,4 +1,4 @@
-package com.me.tmw;
+package com.me.tmw.balls;
 
 import java.util.Collection;
 import java.util.Objects;

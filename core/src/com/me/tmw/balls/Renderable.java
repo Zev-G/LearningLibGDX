@@ -1,4 +1,4 @@
-package com.me.tmw;
+package com.me.tmw.balls;
 
 public interface Renderable {
 

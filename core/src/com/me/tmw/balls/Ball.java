@@ -1,8 +1,9 @@
-package com.me.tmw;
+package com.me.tmw.balls;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.me.tmw.Application;
 
 public class Ball extends Shape {
 
@@ -25,7 +26,7 @@ public class Ball extends Shape {
         float dist = 1f - (float) (Math.sqrt(x * x + y * y) / maxDist);
 
         float mouseDist = 1;
-        if (Application.SPOTLIGHT) {
+        if (BallProgram.SPOTLIGHT) {
             float xMouse = Gdx.input.getX();
             float yMouse = height * 2 - Gdx.input.getY();
             float xMouseDist = Math.abs(xMouse - relativePos.getX());
