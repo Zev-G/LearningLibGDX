@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 
 public class Application extends ApplicationAdapter {
 
-	private final Program program = new BallProgram();
+	private final Program program = new GraphApplication();
 
 	@Override
 	public void create () {
