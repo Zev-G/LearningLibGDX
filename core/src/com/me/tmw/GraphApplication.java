@@ -52,19 +52,15 @@ public class GraphApplication implements Program {
             this.context.setBindings(scriptEngine.createBindings(), ScriptContext.ENGINE_SCOPE);
         }
 
-        float start = 0;
-        float max = 100;
-        float step = 0.1f;
-//        for (float x = start; x < max; x += step) {
-//            points.add(new Vector2(x, func(x)));
-//        }
-//        points.add(new Vector2(0, 0));
-
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
                 if (keycode == Input.Keys.SPACE) {
                     playing = !playing;
+                    return true;
+                } else if (keycode == Input.Keys.C) {
+                    drawTime = 0;
+                    points.clear();
                     return true;
                 }
                 return false;
@@ -87,24 +83,26 @@ public class GraphApplication implements Program {
         }
     }
 
-    private float time = 0;
-    private float maxTextWidth = Integer.MIN_VALUE;
+    private float drawTime = 0;
+    private float rawTime = 0;
+    private float maxTextWidth = 0;
 
     @Override
     public void render() {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 //        if (true) return;
-        if (playing) {
-            time += Gdx.graphics.getDeltaTime();
-            points.add(new Vector2(time, func(time)));
-        }
-
-        if (points.isEmpty()) {
+        float deltaTime = Gdx.graphics.getDeltaTime();
+        if (playing && rawTime >= 1) {
+            points.add(new Vector2(drawTime, func(drawTime)));
+            drawTime += deltaTime;
+        } else if (!playing && points.isEmpty()) {
             batch.begin();
             writeRelativeToText("Press Space to begin animation", Gdx.graphics.getWidth() / 2f, Gdx.graphics.getHeight() / 2f, 0.5f);
             batch.end();
             return;
         }
+
+        rawTime += deltaTime;
 
         renderer.begin(ShapeRenderer.ShapeType.Filled);
 
@@ -138,19 +136,26 @@ public class GraphApplication implements Program {
         String[] textPointsX = new String[10];
         for (int i = 1; i <= 10; i++) {
             float dec = i / 10f;
-            String yAxis = textPointsY[i - 1] = format(dec * maxY + minY);
-            maxTextWidth = Math.max(maxTextWidth, new GlyphLayout(font, yAxis).width);
-            textPointsX[i - 1] = format(dec * maxX + minX);
+            if (!points.isEmpty()) {
+                String yAxis = textPointsY[i - 1] = format(dec * maxY + minY);
+                maxTextWidth = Math.max(maxTextWidth, new GlyphLayout(font, yAxis).width);
+                textPointsX[i - 1] = format(dec * maxX + minX);
+            } else {
+                textPointsX[i - 1] = "0";
+                textPointsY[i - 1] = "0";
+            }
         }
 
-        Vector2 origin = new Vector2(maxTextWidth + 50, 50);
+        Vector2 origin = new Vector2(Math.max(maxTextWidth + 50, 100), 50);
 
-        Vector2 screenSize = new Vector2(Gdx.graphics.getWidth() - origin.x, Gdx.graphics.getHeight() - origin.y);
+        Vector2 ogScreenSize = new Vector2(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        Vector2 screenSize = new Vector2(ogScreenSize.x - origin.x, ogScreenSize.y - origin.y);
         Vector2 difScreenSize = new Vector2(screenSize.x - origin.x, screenSize.y - origin.y);
 
-        renderer.setColor(Color.ORANGE);
+        Color color = new Color(Color.ORANGE);
+        renderer.setColor(color);
         Vector2 lastPoint = null;
-        int len = (int) (points.size() * Math.min(1, (time / DRAW_TIME)));
+        int len = (int) (points.size() * Math.min(1, (drawTime / DRAW_TIME)));
         for (int i = 0; i < len; i++) {
             Vector2 point = points.get(i);
             point = new Vector2(
@@ -165,35 +170,47 @@ public class GraphApplication implements Program {
         }
 
         renderer.setColor(Color.WHITE);
+        Vector2 lineSize = new Vector2(screenSize.x, screenSize.y + (origin.y / 2));
+        if (rawTime < 1) {
+            float mult = Math.min(1, rawTime);
+            lineSize = new Vector2(lineSize.x * mult, lineSize.y * mult);
+        }
         // Draw axis lines
-        renderer.rectLine(origin, new Vector2(origin.x, screenSize.y + (origin.y / 2)), 2);
-        renderer.rectLine(origin, new Vector2(screenSize.x, origin.y), 2);
+        renderer.rectLine(origin, new Vector2(origin.x, lineSize.y), 2);
+        renderer.rectLine(origin, new Vector2(lineSize.x, origin.y), 2);
         // Draw arrows
         renderer.triangle(
-                origin.x - triangleWidth / 2, screenSize.y - (triangleHeight - 1) + (origin.y / 2),
-                origin.x, screenSize.y + 1 + (origin.y / 2),
-                origin.x + triangleWidth / 2, screenSize.y - (triangleHeight - 1) + (origin.y / 2)
+                origin.x - triangleWidth / 2, lineSize.y - (triangleHeight - 1),
+                origin.x, lineSize.y,
+                origin.x + triangleWidth / 2, lineSize.y - (triangleHeight - 1)
         );
         renderer.triangle(
-                screenSize.x - (triangleHeight - 1), origin.y + triangleHeight / 2,
-                screenSize.x + 1, origin.y,
-                screenSize.x - (triangleWidth - 1), origin.y - triangleWidth / 2
+                lineSize.x - (triangleHeight - 1), origin.y + triangleHeight / 2,
+                lineSize.x + 1, origin.y,
+                lineSize.x - (triangleWidth - 1), origin.y - triangleWidth / 2
         );
 
         renderer.end();
         batch.begin();
 
         // Draw origin numbers
-        if (minX == minY) {
-            writeRelativeToText(format(minX), origin.x - 10, origin.y - 10, 1, 0);
-        } else {
-            String originX = format(minX);
-            String originY = format(minY);
-            writeRelativeToText(originY, origin.x - 10, origin.y, 1, -1);
-            writeRelativeToText(originX, origin.x, origin.y -10, 0, 0);
+        if (rawTime >= 0.4) {
+            if (points.isEmpty()) {
+                writeRelativeToText("0", origin.x - 10, origin.y, 1, -1);
+                writeRelativeToText("0", origin.x, origin.y - 10, 0, 0);
+            } else {
+                if (minX == minY) {
+                    writeRelativeToText(format(minX), origin.x - 10, origin.y - 10, 1, 0);
+                } else {
+                    String originX = format(minX);
+                    String originY = format(minY);
+                    writeRelativeToText(originY, origin.x - 10, origin.y, 1, -1);
+                    writeRelativeToText(originX, origin.x, origin.y - 10, 0, 0);
+                }
+            }
         }
         // Draw text points
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1, m = (int) (10 * Math.min(rawTime - 0.5, 1)); i <= m; i++) {
             float dec = i / 10f;
             // Draw y-axis text
             writeRelativeToText(textPointsY[i - 1], origin.x - 10, dec * (screenSize.y - origin.y) + origin.y, 1, -0.5f);
@@ -248,6 +265,7 @@ public class GraphApplication implements Program {
         writeRelativeToText(text, x, y, multiplier, multiplier);
     }
     private void writeRelativeToText(String text, float x, float y, float multiplierX, float multiplierY) {
+        if (text == null) return;
         GlyphLayout layout = new GlyphLayout(font, text);
         font.draw(batch, text, x - (layout.width * multiplierX), y - (layout.height * multiplierY));
     }
