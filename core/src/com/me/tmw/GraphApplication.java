@@ -43,8 +43,6 @@ public class GraphApplication implements Program {
         this.batch = new SpriteBatch();
         this.code = "f(x) = sin(x)";
 
-        System.out.println(format(0.1f));
-
         if (useCode) {
             this.context = new SimpleScriptContext();
             this.manager = new ScriptEngineManager(getClass().getClassLoader());
@@ -79,6 +77,7 @@ public class GraphApplication implements Program {
                 return 0;
             }
         } else {
+//            return (float) Math.pow(x - 20, 2) + 12;
             return (float) Math.sin(x);
         }
     }
@@ -228,36 +227,37 @@ public class GraphApplication implements Program {
     }
 
     private static final int PRECISION = 3;
-    private static final double PRECISION_ROUND = Math.pow(10, PRECISION);
-    private static final double SCI_NOTATION_AT_HIGH = 1e4;
-    private static final double SCI_NOTATION_AT_LOW = -SCI_NOTATION_AT_HIGH;
-    private String format(float num) {
+    private String format(double num) {
         if (num == 0) return "0";
         num = round(num);
-        if (num < SCI_NOTATION_AT_HIGH && num > SCI_NOTATION_AT_LOW) {
+        int digits = (int) (Math.log10(Math.abs(num)) - 1);
+        if (Math.abs(digits) < PRECISION) {
             return approximateString(num);
         }
-        int digits = (int) (Math.log10((int) num));
-        num = (float) (num * Math.pow(10, -digits));
-        if (Math.abs(Math.round(num) - num) < 1e-2 && Math.round(num) == 10) {
-            num /= 10;
-            digits++;
-        }
+        if (num > 1) digits++;
+        num = num * Math.pow(10, -digits);
+//        if (Math.abs(Math.round(num) - num) < 1e-2 && Math.round(num) == 10) {
+//            num /= 10;
+//            digits++;
+//        }
         return approximateString(num) + "e" + digits;
     }
-    private String approximateString(float num) {
+    private String approximateString(double num) {
         if ((int) num == num) return String.valueOf((int) num);
-        if (Math.abs(Math.round(num) - num) < 1e-2) return String.valueOf(Math.round(num));
+        if (Math.abs(num - round(num, 4)) < 1e-13) return String.valueOf(round(num));
         return String.valueOf(num);
     }
-    private float round(float num) {
-        if (num >= PRECISION_ROUND) return Math.round(num);
-
+    private double round(double num) {
+        return round(num, PRECISION);
+    }
+    private double round(double num, int precision) {
+        if (num < 1) precision++;
         int digits = (int) Math.log10(Math.abs(num));
-        int alter = (PRECISION - 1) - digits;
-        num *= Math.pow(10, alter);
+        int alter = (precision - 1) - digits;
+        double pow = Math.pow(10, alter);
+        num *= pow;
         num = Math.round(num);
-        num *= Math.pow(10, -alter);
+        num /= pow;
         return num;
     }
 
